@@ -1,0 +1,68 @@
+package com.dianru;
+
+import com.dianru.manager.DynamicVcodeService;
+import com.dianru.manager.PrinterService;
+import com.dianru.manager.UserService;
+import com.dianru.manager.impl.DynamicVcodeServiceImpl;
+import com.dianru.manager.impl.PrinterServiceImpl;
+import com.dianru.manager.impl.UserServiceImpl;
+import com.googlecode.jsonrpc4j.JsonRpcServer;
+import com.googlecode.jsonrpc4j.ProxyUtil;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+
+public class JsonRpcServlet extends HttpServlet {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 8871530914275657409L;
+	private JsonRpcServer jsonRpcServer;
+
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+		// InputStream is = req.getInputStream();
+		// is.mark(0);
+		//
+		// BufferedReader r = new BufferedReader(new
+		// InputStreamReader(is,"UTF-8"));
+		// String l;
+		// System.out.print("start||");
+		// while((l = r.readLine()) != null){
+		// System.out.print(l);
+		// }
+		// System.out.print("||stop");
+		// System.out.println();
+		//
+		// is.reset();
+		jsonRpcServer.handle(req, resp);
+	}
+
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+			throws ServletException, IOException {
+		this.doPost(req, resp);
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Override
+	public void init(ServletConfig config) {
+		UserService userService = new UserServiceImpl();
+		PrinterService printerService = new PrinterServiceImpl();
+		DynamicVcodeService dynamicVcodeService = new DynamicVcodeServiceImpl();
+		Object[] services = new Object[] { userService, printerService, dynamicVcodeService };
+		Class[] serviceClasses = new Class[] { UserService.class,
+				PrinterService.class, DynamicVcodeService.class };
+		Object compositeService = ProxyUtil.createCompositeServiceProxy(this
+				.getClass().getClassLoader(), services, serviceClasses, true);
+		this.jsonRpcServer = new JsonRpcServer(compositeService);
+	}
+
+}
